@@ -8,7 +8,7 @@ var app = express.createServer(express.logger());
 app.configure(function(){
 	app.get('/', function(request, response) {
 	  feedparser.parseUrl('http://weather.yahooapis.com/forecastrss?p='+zip).on('article', function(a){
-      response.send(a.yweather:condition.code);
+      response.send(a['yweather:condition']['code']);
 	  });
 
 	});
