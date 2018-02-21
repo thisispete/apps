@@ -84,3 +84,4 @@ generated
 dist
 build
 TODO.md
+package-lock.json
