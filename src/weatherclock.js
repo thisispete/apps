@@ -1,124 +1,103 @@
-module.exports.read = function(zip, callback){
-    zip = zip || 94110;
+const axios = require("axios");
 
-    var feedparser = require('feedparser');
-    feedparser.parseUrl('http://weather.yahooapis.com/forecastrss?p='+zip).on('article', function(a){
-      callback(String(lookup(parseInt(a['yweather:condition']['@'].code, 10))));
-    });
+module.exports.read = function(callback){
+    const url = 'http://api.wunderground.com/api/8d6397422bb399b2/conditions_v11/q/94609.json';
 
-    var lookup = function(input){
-      switch(input){
-        case 0 :
-          //tornado
-        case 1 :
-          //tropical storm
-        case 2 :
-          //hurricane
-          return "d";
-        case 5 :
-          //mixed rain and snow
-        case 6 :
-          //mixed rain and sleet
-        case 7 :
-          //mixed snow and sleet
-        case 8 :
-          //freezing drizzle
-        case 10 :
-          //freezing rain
-        case 17 :
-          //hail
-        case 18 :
-          //sleet
-        case 35 :
-          //mixed rain and hail
-          return 9;
-        case 9 :
-          //drizzle
-        case 11 :
-          //showers
-        case 12 :
-          //showers
-        case 40 :
-          //scattered showers
-          return 8;
-        case 13 :
-          //snow flurries
-        case 14 :
-          //light snow showers
-        case 16 :
-          //snow
-        case 41 :
-          //heavy snow
-        case 42 :
-          //scattered snow showers
-        case 43 :
-          //heavy snow
-        case 46 :
-          //snow showers
-          return "a";
-        case 15 :
-          //blowing snow
-        case 23 :
-          //blustery
-        case 24 :
-          //windy
-          return "b";
-        case 19 :
-          //dust
-        case 20 :
-          //foggy
-        case 21 :
-          //haze
-        case 22 :
-          //smoky
-          return 3;
-        case 25 :
-          //cold
-          return 1;
-        case 26 :
-          //cloudy
-        case 27 :
-          //mostly cloudy (night)
-        case 28 :
-          //mostly cloudy (day)
-          return 4;
-        case 29 :
-          //partly cloudy (night)
-        case 30 :
-          //partly cloudy (day)
-        case 44 :
-          //partly cloudy
-          return 5;
-        case 31 :
-          //clear (night)
-        case 33 :
-          //fair (night)
-          return 7;
-        case 32 :
-          //sunny
-        case 34 :
-          //fair (day)
-          return 6;
-        case 36 :
+    axios.get(url)
+      .then(response => {
+        var data = response.data;
+
+        var icon = data.current_observation.icon;
+        var output = 0;
+        var isNight = false;
+        if (icon.substring(0,3) == 'nt_'){
+          isNight = true;
+          icon = icon.substring(3);
+        }
+
+        switch(icon){
+          case 'flurries':
+          case 'chanceflurries':
+          case 'snow':
+          case 'chancesnow':
+            //snow
+            output = "a";
+            break;
+          case 'chancerain':
+          case 'rain':
+            //showers
+            output = 8;
+            break;
+          case 'chancesleet':
+          case 'sleet':
+            //mixed rain and snow
+            //hail
+            //sleet
+            output = 9;
+            break;
+          case 'clear':
+            //sunny
+            output = 6;
+            if (isNight) {
+              //clear (night)
+              output = 7;
+            }
+            break;
+          case 'partlycloudy':
+          case 'mostlycloudy':
+          case 'partlysunny':
+            //partly cloudy
+            output = 5;
+            break;
+          case 'cloudy':
+            //cloudy
+            output = 4;
+            break;
+          case 'fog':
+          case 'hazy':
+            //foggy
+            output = 3;
+            break;
+          case 'mostlysunny':
+          case 'sunny':
+            //sunny
+            output = 6;
+            break;
+          case 'tstorms':
+          case 'chancetstorms':
+            //thunderstorms
+            output = "c";
+            break;
+          case 'unknown':
+          default:
+            output = 0;
+            break;
+        }
+
+        if(data.current_observation.feelslike_f > 95 ){
           //hot
-          return 2;
-        case 3 :
-          //severe thunderstorms
-        case 4 :
-          //thunderstorms
-        case 37 :
-          //isolated thunderstorms
-        case 38 :
-          //scattered thunderstorms
-        case 39 :
-          //scattered thunderstorms
-        case 45 :
-          //thundershowers
-        case 47 :
-          //isolated thundershowers
-          return "c";
-        default :
-          return 0;
-      }
-    };
+          output = 2;
+        }
+        if(data.current_observation.feelslike_f < 30 ){
+          //cold
+          output = 1;
+        }
+        if (data.current_observation.wind_gust_kph > 40) {
+          //windy
+          output = "b";
+        }
+        if (data.current_observation.wind_gust_kph > 75) {
+          //tornado
+          //hurricane
+          output = "d";
+        }
+
+        callback(output);
+      })
+      .catch(error => {
+        console.log(error);
+        callback(error);
+      });
+
+
 };

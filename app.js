@@ -13,8 +13,8 @@ app.get('/', function(request, response) {
 
 app.get('/weatherclock', function(request, response) {
   var weatherclock = require('./src/weatherclock');
-  weatherclock.read(94110, function(res){
-    response.send(res);
+  weatherclock.read((res) => {
+    response.send(String(res));
   });
 });
 
